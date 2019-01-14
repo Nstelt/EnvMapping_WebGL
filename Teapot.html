@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Teapot</title>
+ 
+<script id="shader-vs" type="x-shader/x-vertex">
+   attribute vec3 aVertexNormal;
+   attribute vec3 aVertexPosition;
+   attribute vec3 aTexCoord;
+   varying vec3 vTexCoord;
+   uniform mat4 uMVMatrix;
+   uniform mat4 uPMatrix;
+
+   void main(void) { 
+     gl_Position = uPMatrix*uMVMatrix*vec4(aVertexPosition, 1.0);
+     vTexCoord= aTexCoord; 
+	
+	}
+
+</script><script id="shader-fs" type="x-shader/x-fragment">
+
+	precision mediump float;
+ 
+	// Passed in from the vertex shader.
+	varying vec3 vTexCoord;
+ 
+	// The texture.
+	uniform samplerCube uSampler;
+ 
+	void main() {
+   	gl_FragColor = textureCube(uSampler, vTexCoord);
+   	//gl_FragColor = //vec4(vTexCoord.x,vTexCoord.y,0.0,1.0);
+   }
+
+</script><script src="./Hello Texture_files/gl-matrix-min.js"></script><script src="./Hello Texture_files/webgl-utils.js"></script>
+<script src="Hello Texture_files/gl-matrix.js"></script><script src="./Hello Texture_files/terrainModeling.js"></script><script src="./Hello Texture_files/HelloTexture.js"></script>
+<script src="readText.js"></script>
+    
+    
+</head>
+
+   
+<script id="shader-phong-phong-vs" type="x-shader/x-vertex">
+  attribute vec3 aVertexNormal;
+   attribute vec3 aVertexPosition;
+   
+    uniform mat4 uMVMatrix;
+    uniform mat4 uPMatrix;
+    uniform mat3 uNMatrix;
+    varying vec3 vNormal;
+    varying vec3 vPosition;
+    
+    void main(void) {
+    
+    // Get the vertex position in eye coordinates
+    vec4 vertexPositionEye4 = uMVMatrix * vec4(aVertexPosition, 1.0);
+    vPosition = vertexPositionEye4.xyz / vertexPositionEye4.w;
+    //Calaulate the normal
+    vNormal = normalize(uNMatrix * aVertexNormal);
+   
+    gl_Position = uPMatrix*uMVMatrix*vec4(aVertexPosition, 1.0);    
+ }
+</script>
+
+
+
+<script id="shader-phong-phong-fs" type="x-shader/x-fragment">
+
+	precision mediump float;
+	varying vec3 vNormal;
+	varying vec3 vPosition;
+
+	uniform vec3 uLightPosition;
+	uniform vec3 uAmbientLightColor;
+	uniform vec3 uDiffuseLightColor;
+	uniform vec3 uSpecularLightColor;
+	uniform vec3 uAmbientMaterialColor;
+	uniform vec3 uDiffuseMaterialColor;
+	uniform vec3 uSpecularMaterialColor;
+	uniform float uShininess;
+
+
+void main(void) {
+    
+    vec4 vColor;
+    // Calculate the vector (l) to the light source
+    vec3 vectorToLightSource = normalize(uLightPosition - vPosition);
+    
+    // Calculate n dot l for diffuse lighting
+    float diffuseLightWeightning = max(dot(vNormal, 
+                                    vectorToLightSource), 0.0);
+                                       
+    // Calculate the reflection vector (r) that is needed for specular light
+    vec3 reflectionVector = normalize(reflect(-vectorToLightSource, 
+                                             vNormal));
+    
+    // The camera in eye coordinates is located in the origin and is pointing
+    // along the negative z-axis. Calculate viewVector (v) 
+    // in eye coordinates as
+    vec3 viewVectorEye = -normalize(vPosition);
+    
+    float rdotv = max(dot(reflectionVector, viewVectorEye), 0.0);
+    
+    float specularLightWeightning = pow(rdotv, uShininess);
+
+    // Sum up all three reflection components and send to the fragment shader
+    vColor = vec4(((uAmbientLightColor*uAmbientMaterialColor)
+                + (uDiffuseLightColor*uDiffuseMaterialColor) * diffuseLightWeightning
+                + (uSpecularLightColor*uSpecularMaterialColor) * specularLightWeightning),1.0);
+
+    gl_FragColor = vColor;
+    
+    
+  
+ }
+ 
+</script>
+
+
+<!-- SHADERS FOR CUBE MAPPING --> 
+<script id="cube_map-vs" type="x-shader/x-vertex">
+
+	attribute vec3 vPosition;
+	attribute vec3 vNormal;
+	uniform mat4 uMVMatrix;
+	uniform mat4 uPMatrix;
+	varying vec3 varyEyeCoords;
+	varying vec3 varyNormal;
+	varying vec3 vNormal2;
+
+void main(){
+    vec4 eyeCoords = uMVMatrix * vec4(vPosition, 1.0);
+    gl_Position = uPMatrix * uMVMatrix * vec4(vPosition, 1.0);
+    varyEyeCoords = eyeCoords.xyz;
+    varyNormal = normalize(vNormal);
+ 
+} 
+</script>
+    
+<script id="cube_map-fs" type="x-shader/x-fragment">
+	precision mediump float;
+	varying vec3 varyNormal;
+	varying vec3 varyEyeCoords;  
+	uniform samplerCube texMap;
+	uniform mat3 uNMatrix;
+	uniform mat3 inverseViewTransform;
+	uniform mat3 refTransform;
+
+
+void main()
+{
+    vec3 N = normalize(uNMatrix * varyNormal);
+    vec3 V = -varyEyeCoords;
+    vec3 R = -reflect(V, N);
+    R = R * refTransform;
+    gl_FragColor = textureCube(texMap, R); 
+    
+}
+</script>
+    
+
+    
+ 
+<body onload="startup();">
+<canvas id="myGLCanvas" width="800" height="800"></canvas>
+
+<h1>Press the z key to rotate the teapot</h1>
+<h1>Press the x key to orbit the camera</h1>
+<form>Toggle shading
+<div>
+<input type="radio" id="phong_shading"
+name="shading" value="phong_shading" checked>
+<label for="fog_on">Phong Shading</label>
+
+<input type="radio" id="normal_mapping"
+name="shading" value="normal_mapping">
+<label for="fog_off">Normal Mapping</label>
+
+</div>
+</form>
+
+</body></html>
