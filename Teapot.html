@@ -2,7 +2,7 @@
 <html lang="en">
 <head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <title>Teapot</title>
- 
+
 <script id="shader-vs" type="x-shader/x-vertex">
    attribute vec3 aVertexNormal;
    attribute vec3 aVertexPosition;
@@ -11,54 +11,54 @@
    uniform mat4 uMVMatrix;
    uniform mat4 uPMatrix;
 
-   void main(void) { 
+   void main(void) {
      gl_Position = uPMatrix*uMVMatrix*vec4(aVertexPosition, 1.0);
-     vTexCoord= aTexCoord; 
-	
+     vTexCoord= aTexCoord;
+
 	}
 
 </script><script id="shader-fs" type="x-shader/x-fragment">
 
 	precision mediump float;
- 
+
 	// Passed in from the vertex shader.
 	varying vec3 vTexCoord;
- 
+
 	// The texture.
 	uniform samplerCube uSampler;
- 
+
 	void main() {
    	gl_FragColor = textureCube(uSampler, vTexCoord);
    	//gl_FragColor = //vec4(vTexCoord.x,vTexCoord.y,0.0,1.0);
    }
 
-</script><script src="./Hello Texture_files/gl-matrix-min.js"></script><script src="./Hello Texture_files/webgl-utils.js"></script>
-<script src="Hello Texture_files/gl-matrix.js"></script><script src="./Hello Texture_files/terrainModeling.js"></script><script src="./Hello Texture_files/HelloTexture.js"></script>
+</script><script src="./jsFiles/gl-matrix-min.js"></script><script src="./jsFiles/webgl-utils.js"></script>
+<script src="jsFiles/gl-matrix.js"></script><script src="./jsFiles/terrainModeling.js"></script><script src="./jsFiles/HelloTexture.js"></script>
 <script src="readText.js"></script>
-    
-    
+
+
 </head>
 
-   
+
 <script id="shader-phong-phong-vs" type="x-shader/x-vertex">
   attribute vec3 aVertexNormal;
    attribute vec3 aVertexPosition;
-   
+
     uniform mat4 uMVMatrix;
     uniform mat4 uPMatrix;
     uniform mat3 uNMatrix;
     varying vec3 vNormal;
     varying vec3 vPosition;
-    
+
     void main(void) {
-    
+
     // Get the vertex position in eye coordinates
     vec4 vertexPositionEye4 = uMVMatrix * vec4(aVertexPosition, 1.0);
     vPosition = vertexPositionEye4.xyz / vertexPositionEye4.w;
     //Calaulate the normal
     vNormal = normalize(uNMatrix * aVertexNormal);
-   
-    gl_Position = uPMatrix*uMVMatrix*vec4(aVertexPosition, 1.0);    
+
+    gl_Position = uPMatrix*uMVMatrix*vec4(aVertexPosition, 1.0);
  }
 </script>
 
@@ -81,26 +81,26 @@
 
 
 void main(void) {
-    
+
     vec4 vColor;
     // Calculate the vector (l) to the light source
     vec3 vectorToLightSource = normalize(uLightPosition - vPosition);
-    
+
     // Calculate n dot l for diffuse lighting
-    float diffuseLightWeightning = max(dot(vNormal, 
+    float diffuseLightWeightning = max(dot(vNormal,
                                     vectorToLightSource), 0.0);
-                                       
+
     // Calculate the reflection vector (r) that is needed for specular light
-    vec3 reflectionVector = normalize(reflect(-vectorToLightSource, 
+    vec3 reflectionVector = normalize(reflect(-vectorToLightSource,
                                              vNormal));
-    
+
     // The camera in eye coordinates is located in the origin and is pointing
-    // along the negative z-axis. Calculate viewVector (v) 
+    // along the negative z-axis. Calculate viewVector (v)
     // in eye coordinates as
     vec3 viewVectorEye = -normalize(vPosition);
-    
+
     float rdotv = max(dot(reflectionVector, viewVectorEye), 0.0);
-    
+
     float specularLightWeightning = pow(rdotv, uShininess);
 
     // Sum up all three reflection components and send to the fragment shader
@@ -109,15 +109,15 @@ void main(void) {
                 + (uSpecularLightColor*uSpecularMaterialColor) * specularLightWeightning),1.0);
 
     gl_FragColor = vColor;
-    
-    
-  
+
+
+
  }
- 
+
 </script>
 
 
-<!-- SHADERS FOR CUBE MAPPING --> 
+<!-- SHADERS FOR CUBE MAPPING -->
 <script id="cube_map-vs" type="x-shader/x-vertex">
 
 	attribute vec3 vPosition;
@@ -133,14 +133,14 @@ void main(){
     gl_Position = uPMatrix * uMVMatrix * vec4(vPosition, 1.0);
     varyEyeCoords = eyeCoords.xyz;
     varyNormal = normalize(vNormal);
- 
-} 
+
+}
 </script>
-    
+
 <script id="cube_map-fs" type="x-shader/x-fragment">
 	precision mediump float;
 	varying vec3 varyNormal;
-	varying vec3 varyEyeCoords;  
+	varying vec3 varyEyeCoords;
 	uniform samplerCube texMap;
 	uniform mat3 uNMatrix;
 	uniform mat3 inverseViewTransform;
@@ -153,14 +153,14 @@ void main()
     vec3 V = -varyEyeCoords;
     vec3 R = -reflect(V, N);
     R = R * refTransform;
-    gl_FragColor = textureCube(texMap, R); 
-    
+    gl_FragColor = textureCube(texMap, R);
+
 }
 </script>
-    
 
-    
- 
+
+
+
 <body onload="startup();">
 <canvas id="myGLCanvas" width="800" height="800"></canvas>
 
